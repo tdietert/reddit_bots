@@ -86,11 +86,14 @@ def check_replied(comment):
 			return True
 	return False
 
+def ignore_comment_replies(root_comment, tracker):
+	for comment in root_comment.replies:
+		tracker.add(comment.id)
 
 if __name__ == '__main__':
 
 	r = praw.Reddit('this is u/swingtheorys user comment scraper!')
-	r.login('', '')
+	r.login('tenwords_bot', 'ilikepotatoesjug')
 
 	already_commented = set()
 	users_replied_to = set()
@@ -107,9 +110,9 @@ if __name__ == '__main__':
 					reddit_bot = TenWordsBot(author, comment)
 					reddit_bot.reply_results()
 					already_commented.add(comment.id)
+					ignore_comment_replies(comment)
 					users_replied_to.add(comment.author.name)
 					time.sleep(600)
-
 
 
 
