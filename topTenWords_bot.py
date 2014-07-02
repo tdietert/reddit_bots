@@ -87,7 +87,7 @@ def replied(comment):
 if __name__ == '__main__':
 
 	r = praw.Reddit('this is u/swingtheorys user comment scraper!')
-	r.login('tenwords_bot', 'ilikepotatoesjug')
+	r.login('', '')
 
 	already_commented = set()
 	users_replied_to = set()
