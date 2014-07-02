@@ -14,6 +14,7 @@ class TenWordsBot():
 	def __init__(self, redditor, comment):
 
 		self.redditor = redditor
+		self.ignore = self.get_ignore_list()
 		self.top_ten_words = self.get_top_ten()
 		self.comment = comment
 
@@ -36,7 +37,7 @@ class TenWordsBot():
 
 		return comment_list
 
-	def get_most_common(self):
+	def get_ignore_list(self):
 		mcw_list = []
 		with open('C:/Users/Tommy/pythonFiles/most_common_words.txt', "r") as mcwords:
 			for line in mcwords.readlines():
@@ -47,20 +48,25 @@ class TenWordsBot():
 	# uses regex to filter out "words", only counts words 4 letters and over
 	def collect_word_data(self, usr_comments):
 		words_dict = {}
-		# gets the most commonly used words in english, and doesn't count them
-		mcw_list = self.get_most_common()
 		# iterates through a list of a list of comments from each page
 		for comment in usr_comments:
-			# ignores words with apostrophes because of contractions
 			for word in re.findall(r"[\w]+", comment):
-				if len(word) > 3 and word not in mcw_list:
-					if not word.isdigit():
-						word = word.lower()
-					if word in words_dict.keys():
-						words_dict[word] += 1
-					else:
-						words_dict[word] = 1
+				word = self.filter(word)
+				if word and word not in words_dict.keys():
+					word_dict[word] = 1
+				else:
+					word_dict[word] += 1
+
 		return words_dict
+
+	def filter_words(self, word):
+		if word in self.ignore:
+			return None
+		if word.isdigit():
+			return None
+		if len(word < 4):
+			return None
+		return word.lower()
 
 	def get_ordered_word_dict(self, words):
 		# returns the list of words in descending from most->least usage
@@ -72,24 +78,25 @@ class TenWordsBot():
 		self.comment.reply(message)
 
 def check_replied(comment):
+	if comment.author.name == 'tenwords_bot':
+		return True
 	for comment in comment.replies:
-		if comment.author == 'tenwords_bot':
+		if comment.author.name == 'tenwords_bot':
 			return True
-
 	return False
 
 
 if __name__ == '__main__':
 
 	r = praw.Reddit('this is u/swingtheorys user comment scraper!')
-	r.login('', '')
+	r.login('tenwords_bot', 'ilikepotatoesjug')
 
-	already_commented = []
-	users_replied_to = []
+	already_commented = set()
+	users_replied_to = set()
 
 	while True:
 
-		submission = r.get_submission(submission_id='29ngoq')
+		submission = r.get_submission(submission_id='')
 		sub_comment_list = praw.helpers.flatten_tree(submission.comments)
 
 		for comment in sub_comment_list:
@@ -99,5 +106,5 @@ if __name__ == '__main__':
 					reddit_bot = TenWordsBot(author, comment)
 					reddit_bot.reply_results()
 					already_commented.append(comment.id)
-					users_replied_to.append(comment.author)
+					users_replied_to.append(comment.author.name)
 					time.sleep(600)
