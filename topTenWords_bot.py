@@ -50,7 +50,7 @@ class TenWordsBot():
 		words_dict = {}
 		# iterates through a list of a list of comments from each page
 		for comment in usr_comments:
-			for word in re.findall(r"[\w]+", comment):
+			for word in re.findall(r"[\w']+", comment):
 				word = self.filter_word(word)
 				if word != None:
 					if word not in words_dict.keys():
@@ -78,17 +78,11 @@ class TenWordsBot():
 		message = 'Your top ten words used:\n\n[ word : frequency ]\n\n' + message
 		self.comment.reply(message)
 
-def check_replied(comment):
-	if comment.author.name == 'tenwords_bot':
-		return True
+def replied(comment):
 	for comment in comment.replies:
 		if comment.author.name == 'tenwords_bot':
 			return True
 	return False
-
-def ignore_comment_replies(root_comment, tracker):
-	for comment in root_comment.replies:
-		tracker.add(comment.id)
 
 if __name__ == '__main__':
 
@@ -99,20 +93,22 @@ if __name__ == '__main__':
 	users_replied_to = set()
 
 	while True:
-
 		submission = r.get_submission(submission_id='29nmpq')
 		sub_comment_list = praw.helpers.flatten_tree(submission.comments)
 
 		for comment in sub_comment_list:
-			if not check_replied(comment):
-				if comment.author and comment.id not in already_commented and comment.author.name not in users_replied_to:
-					author = comment.author
-					reddit_bot = TenWordsBot(author, comment)
-					reddit_bot.reply_results()
-					already_commented.add(comment.id)
-					ignore_comment_replies(comment)
-					users_replied_to.add(comment.author.name)
-					time.sleep(600)
+			# sleeps first to prevent bad start/stop behavior
+			time.sleep(600)
+			# only replies to root comments
+			if comment.is_root:
+				if not replied(comment):
+					if comment.author and comment.id not in already_commented and comment.author.name not in users_replied_to:
+
+						reddit_bot = TenWordsBot(comment.author, comment)
+						reddit_bot.reply_results()
+
+						already_commented.add(comment.id)
+						users_replied_to.add(comment.author.name)
 
 
 
