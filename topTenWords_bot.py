@@ -87,7 +87,7 @@ if __name__ == '__main__':
 				author = comment.author
 				reddit_bot = TenWordsBot(author, comment)
 				reddit_bot.reply_results()
-				already_responded.append(comment.id)
+				already_commented.append(comment.id)
 				users_replied_to.append(comment.author)
 				time.sleep(600)
 
