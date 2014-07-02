@@ -52,10 +52,11 @@ class TenWordsBot():
 		for comment in usr_comments:
 			for word in re.findall(r"[\w]+", comment):
 				word = self.filter_word(word)
-				if word != None and word not in words_dict.keys():
-					words_dict[word] = 1
-				elif word != None:
-					words_dict[word] += 1
+				if word != None:
+					if word not in words_dict.keys():
+						words_dict[word] = 1
+					else:
+						words_dict[word] += 1
 
 		return words_dict
 
@@ -108,6 +109,7 @@ if __name__ == '__main__':
 					already_commented.add(comment.id)
 					users_replied_to.add(comment.author.name)
 					time.sleep(600)
+
 
 
 
