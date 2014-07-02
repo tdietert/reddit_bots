@@ -51,20 +51,20 @@ class TenWordsBot():
 		# iterates through a list of a list of comments from each page
 		for comment in usr_comments:
 			for word in re.findall(r"[\w]+", comment):
-				word = self.filter(word)
-				if word and word not in words_dict.keys():
-					word_dict[word] = 1
-				else:
-					word_dict[word] += 1
+				word = self.filter_word(word)
+				if word != None and word not in words_dict.keys():
+					words_dict[word] = 1
+				elif word != None:
+					words_dict[word] += 1
 
 		return words_dict
 
-	def filter_words(self, word):
+	def filter_word(self, word):
 		if word in self.ignore:
 			return None
 		if word.isdigit():
 			return None
-		if len(word < 4):
+		if len(word) < 4:
 			return None
 		return word.lower()
 
@@ -89,7 +89,7 @@ def check_replied(comment):
 if __name__ == '__main__':
 
 	r = praw.Reddit('this is u/swingtheorys user comment scraper!')
-	r.login('', '')
+	r.login('tenwords_bot', 'ilikepotatoesjug')
 
 	already_commented = set()
 	users_replied_to = set()
@@ -108,5 +108,6 @@ if __name__ == '__main__':
 					already_commented.add(comment.id)
 					users_replied_to.add(comment.author.name)
 					time.sleep(600)
+
 
 
