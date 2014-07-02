@@ -82,6 +82,10 @@ if __name__ == '__main__':
 	users_replied_to = []
 	
 	while True:
+		
+		submission = r.get_submission(submission_id='29ngoq')
+		sub_comment_list = praw.helpers.flatten_tree(submission.comments)
+
 		for comment in sub_comment_list:
 			if comment.author and comment.id not in already_commented and comment.author not in users_replied_to:
 				author = comment.author
