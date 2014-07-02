@@ -71,27 +71,33 @@ class TenWordsBot():
 		message = 'Your top ten words used:\n\n[ word : frequency ]\n\n' + message
 		self.comment.reply(message)
 
+def check_replied(comment):
+	for comment in comment.replies:
+		if comment.author == 'tenwords_bot':
+			return True
+
+	return False
+
+
 if __name__ == '__main__':
 
 	r = praw.Reddit('this is u/swingtheorys user comment scraper!')
 	r.login('', '')
-	submission = r.get_submission(submission_id='29lkrz')
-	sub_comment_list = praw.helpers.flatten_tree(submission.comments)
 
 	already_commented = []
 	users_replied_to = []
-	
+
 	while True:
-		
+
 		submission = r.get_submission(submission_id='29ngoq')
 		sub_comment_list = praw.helpers.flatten_tree(submission.comments)
 
 		for comment in sub_comment_list:
-			if comment.author and comment.id not in already_commented and comment.author not in users_replied_to:
-				author = comment.author
-				reddit_bot = TenWordsBot(author, comment)
-				reddit_bot.reply_results()
-				already_commented.append(comment.id)
-				users_replied_to.append(comment.author)
-				time.sleep(600)
-
+			if not check_replied(comment):
+				if comment.author and comment.id not in already_commented and comment.author not in users_replied_to:
+					author = comment.author
+					reddit_bot = TenWordsBot(author, comment)
+					reddit_bot.reply_results()
+					already_commented.append(comment.id)
+					users_replied_to.append(comment.author)
+					time.sleep(600)
