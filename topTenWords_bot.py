@@ -3,8 +3,6 @@ from functools import *
 from itertools import *
 
 import collections
-import operator
-import os
 import praw
 import requests
 import re
@@ -16,7 +14,6 @@ class TenWordsBot():
 		self.r = praw.Reddit('this is u/swingtheorys user comment scraper!')
 		self.r.login('', '')
 		self.submission = self.r.get_submission(submission_id=current_thread)
-
 		self.responded_to = set()
 		self.ignore = self.get_ignore_list()
 
