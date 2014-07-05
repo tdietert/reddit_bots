@@ -1,13 +1,3 @@
-
-from bs4 import BeautifulSoup
-from functools import *
-from itertools import *
-
-import collections
-import operator
-import os
-import praw
-import requests
 from bs4 import BeautifulSoup
 from functools import *
 from itertools import *
