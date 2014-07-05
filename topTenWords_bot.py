@@ -14,7 +14,7 @@ class TenWordsBot():
 
 	def __init__(self, current_thread):
 		self.r = praw.Reddit('this is u/swingtheorys user comment scraper!')
-		self.r.login('tenwords_bot', 'ilikepotatoesjug')
+		self.r.login('', '')
 		self.submission = self.r.get_submission(submission_id=current_thread)
 
 		self.responded_to = set()
@@ -106,5 +106,5 @@ class TenWordsBot():
 		return False
 
 if __name__ == '__main__':
-	bot = TenWordsBot('29ur58')
+	bot = TenWordsBot('') # your thread id goes here
 	bot.moniter_thread()
