@@ -6,14 +6,6 @@ import operator
 import os
 import praw
 import requests
-from bs4 import BeautifulSoup
-from functools import *
-
-import collections
-import operator
-import os
-import praw
-import requests
 import re
 import time
 
