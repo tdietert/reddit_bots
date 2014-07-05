@@ -6,6 +6,14 @@ import operator
 import os
 import praw
 import requests
+from bs4 import BeautifulSoup
+from functools import *
+
+import collections
+import operator
+import os
+import praw
+import requests
 import re
 import time
 
@@ -25,7 +33,7 @@ class TenWordsBot():
 		return (collections.Counter(word_dict)).most_common(10)
 
 	def get_user_comments(self):
-		
+
 		user_comments = self.redditor.get_comments(limit=None)
 
 		comment_ids = set()
@@ -39,12 +47,12 @@ class TenWordsBot():
 
 	def get_ignore_list(self):
 		mcw_list = []
-		with open('C:/Users/Tommy/pythonFiles/most_common_words.txt', "r") as mcwords:
+		with open('C:/Users/Thomas/Documents/python_files/ignore_list.txt', "r") as mcwords:
 			for line in mcwords.readlines():
 				mcw_list.append(((line.split(' '))[-1]).strip())
 
 		return mcw_list
-		
+
 	# uses regex to filter out "words", only counts words 4 letters and over
 	def collect_word_data(self, usr_comments):
 		words_dict = {}
@@ -93,15 +101,16 @@ if __name__ == '__main__':
 	users_replied_to = set()
 
 	while True:
-		submission = r.get_submission(submission_id='29nmpq')
+		submission = r.get_submission(submission_id='')
 		sub_comment_list = praw.helpers.flatten_tree(submission.comments)
 
 		for comment in sub_comment_list:
-			# sleeps first to prevent bad start/stop behavior
-			time.sleep(600)
+			print(comment.body)
 			# only replies to root comments
-			if comment.is_root:
+			if comment.is_root and comment.body[:15] == 'get_top_ten(me)':
+
 				if not replied(comment):
+					# this looks messy, but perhaps necessary, read it like a sentence
 					if comment.author and comment.id not in already_commented and comment.author.name not in users_replied_to:
 
 						reddit_bot = TenWordsBot(comment.author, comment)
@@ -110,5 +119,6 @@ if __name__ == '__main__':
 						already_commented.add(comment.id)
 						users_replied_to.add(comment.author.name)
 
+		time.sleep(600)
 
 
