@@ -121,8 +121,7 @@ class TenWordsBot():
 		self.label_graph(output_graph, x_max)
 		# makes errything pretty
 		plt.tight_layout()
-		# saves figure to 
-		 # If the directory does not exist, create it
+
 		return output_graph
 
 	def label_graph(self, rects, max):
