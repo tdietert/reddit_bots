@@ -16,12 +16,14 @@ class TenWordsBot():
 	def __init__(self, current_thread):
 		self.r = praw.Reddit('this is u/swingtheorys user comment scraper!')
 		self.r.login('', '')
-		self.submission = self.r.get_submission(submission_id=current_thread)
+		self.current_thread_id = current_thread
 		self.responded_to = set()
 		self.ignore = self.get_ignore_list()
 
 	def moniter_thread(self):
 		while True:
+			# reloads submission every loop
+			self.submission = self.r.get_submission(submission_id=self.current_thread_id)
 			for comment, redditor in zip(*self.get_commenters()):
 				if redditor.name not in self.responded_to and not self.already_replied(comment):
 					if comment.body[:15] == 'get_top_ten(me)':	
@@ -42,15 +44,16 @@ class TenWordsBot():
 						self.responded_to.add(redditor.name)
 						print 'successfully responded to ' + redditor.name + '...'
 
-			time.sleep(30)
+				time.sleep(10)
+			time.sleep(20)
 
 	def get_commenters(self):
 		comment_list = list(praw.helpers.flatten_tree(self.submission.comments))
 		# .... To make it only moniter root comments:
-		commenters_list = reduce(lambda y, x: y + [x] if x.is_root else y, sub_comment_list, [])
-		redditor_list = reduce(lambda y, x: y + [x.author] if x.is_root else y, sub_comment_list, [])
+		root_comment_list = reduce(lambda y, x: y + [x] if x.is_root else y, comment_list, [])
+		redditor_list = reduce(lambda y, x: y + [x.author] if x.is_root else y, comment_list, [])
 		#redditor_list = list(reduce(lambda y, x: y +[x.author] if x.author else y, comment_list, []))
-		return (comment_list, redditor_list)
+		return (root_comment_list, redditor_list)
 
 	def get_user_comments(self, redditor):
 		user_comments = redditor.get_comments(limit=None)
@@ -150,16 +153,19 @@ class TenWordsBot():
 		print("... Done")
 
 	def upload_to_imgur(self, file_path, username):
-		CLIENT_ID = "cb4311169fa3a6b"
-		CLIENT_SECRET = "a9ca3c24b949e374e3966dd0be65417114b6f7d3"
+		with open(os.getcwd() + '/tenwords_bot_confix.txt', 'r') as id_and_secret:
+			client_id, client_secret = ((id_and_secret.readlines())[0]).split(',')
 
-		im = pyimgur.Imgur(CLIENT_ID)
-		uploaded_image = im.upload_image(file_path, title=username+' top ten words data:')
+			CLIENT_ID = client_id
+			CLIENT_SECRET = client_secret
 
-		print 'uploaded:' + uploaded_image.title
-		print uploaded_image.link
+			im = pyimgur.Imgur(CLIENT_ID)
+			uploaded_image = im.upload_image(file_path, title=username+' top ten words data:')
 
-		return uploaded_image.link
+			print 'uploaded:' + uploaded_image.title
+			print uploaded_image.link
+
+			return uploaded_image.link
 
 	# edit this function
 	def reply_results(self, comment):
@@ -177,12 +183,13 @@ class TenWordsBot():
 
 	def already_replied(self, comment):
 		for cmnt in comment.replies:
-			if cmnt.author.name == 'tenwords_bot':
-				return True
+			if cmnt.author:
+				if cmnt.author.name == 'tenwords_bot':
+					return True
 
 		return False
 
 if __name__ == '__main__':
-	bot = TenWordsBot('') # your thread id goes here
+	bot = TenWordsBot('2a93dr') # your thread id goes here
 	bot.moniter_thread()
 
