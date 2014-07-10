@@ -22,36 +22,44 @@ class TenWordsBot():
 
 	def moniter_thread(self):
 		while True:
-			# reloads submission every loop
-			self.submission = self.r.get_submission(submission_id=self.current_thread_id)
-			for comment, redditor in zip(*self.get_commenters()):
-				if redditor.name not in self.responded_to and not self.already_replied(comment):
-					if comment.body[:15] == 'get_top_ten(me)':	
-					#if redditor.name != 'tenwords_bot':
-						self.usr_comments = self.get_user_comments(redditor)
-						self.top_ten = self.get_top_ten()
-						self.unique_word_count = len(self.collect_word_data())
+			# reloads submission every loop, 
+			submission = self.r.get_submission(submission_id=self.current_thread_id)
+			submission.replace_more_comments(limit=None, threshold=0)
+			for comment, redditor in zip(*self.get_commenters(submission)):
+				if redditor != None:				 
+					if redditor.name not in self.responded_to:
+						if not self.already_replied(comment):
+							if comment.body[:15] == 'get_top_ten(me)':	
 
-						output_graph = self.plot_results(redditor.name)
-						save_dir = os.getcwd() + '/tenwords_bot_output/'
-						file_name = redditor.name + '.png'
-						self.save_locally(output_graph, save_dir, file_name)
+								# collects word data and finds top ten
+								usr_comments = self.get_user_comments(redditor)
+								word_data = self.collect_word_data(usr_comments)
+								top_ten_words = self.get_top_ten(word_data)
+								unique_word_count = self.count_unique_words(usr_comments)
 
-						file_path = save_dir + redditor.name + '.png'
-						self.img_link = self.upload_to_imgur(file_path, redditor.name)
+								# graphs the data and saves it locally
+								output_graph = self.plot_results(redditor.name, top_ten_words)
+								save_dir = os.getcwd() + '/tenwords_bot_output/'
+								file_name = redditor.name + '.png'
+								self.save_locally(output_graph, save_dir, file_name)
 
-						self.reply_results(comment)
-						self.responded_to.add(redditor.name)
-						print 'successfully responded to ' + redditor.name + '...'
+								# uploads to imgur and retrieves the image link
+								file_path = save_dir + redditor.name + '.png'
+								img_link = self.upload_to_imgur(file_path, redditor.name)
 
-				time.sleep(10)
-			time.sleep(20)
+								# replies to current comment
+								self.reply_results(comment, img_link, unique_word_count)
+								self.responded_to.add(redditor.name)
+								print 'successfully responded to ' + redditor.name + '...\n'
 
-	def get_commenters(self):
-		comment_list = list(praw.helpers.flatten_tree(self.submission.comments))
+								time.sleep(15)
+			time.sleep(60)
+
+	def get_commenters(self, submission):
+		comment_list = list(praw.helpers.flatten_tree(submission.comments))
 		# .... To make it only moniter root comments:
 		root_comment_list = reduce(lambda y, x: y + [x] if x.is_root else y, comment_list, [])
-		redditor_list = reduce(lambda y, x: y + [x.author] if x.is_root else y, comment_list, [])
+		redditor_list = reduce(lambda y, x: y + [x.author] if x.is_root  else y, comment_list, [])
 		#redditor_list = list(reduce(lambda y, x: y +[x.author] if x.author else y, comment_list, []))
 		return (root_comment_list, redditor_list)
 
@@ -66,39 +74,47 @@ class TenWordsBot():
 
 		return comment_list
 
-	# uses regex to filter out "words", only counts words 4 letters and over
-	def collect_word_data(self):
-		words_dict = {}
-		# iterates through a list of a list of comments from each page
-		for comment in self.usr_comments:
+	# collect word data filters some words based on length and frequency used in the English language
+	# this function counts the actual number of unique words in the user's comment history
+	def count_unique_words(self, usr_comments):
+		words_counter = collections.Counter()
+		for comment in usr_comments:
 			for word in re.findall(r"[\w']+", comment):
-				word = self.filter_word(word)
-				if word != None:
-					if word not in words_dict.keys():
-						words_dict[word] = 1
-					else:
-						words_dict[word] += 1
+				if not word.isdigit():
+					words_counter[word.lower()] += 1
+
+		return len(words_counter)
+
+	# uses regex to filter out "words", only counts words 4 letters and over
+	def collect_word_data(self, usr_comments):
+		words_counter = collections.Counter()
+		# iterates through a list of a list of comments from each page
+		for comment in usr_comments:
+			for word in re.findall(r"[\w']+", comment):
+				filtered_word = self.filter_word(word)
+				if filtered_word != None:
+					words_counter[filtered_word] += 1
 				
 		# returns the list of words in descending from most->least usage
-		return collections.OrderedDict(sorted(words_dict.items(), key=lambda x: x[1], reverse=True))
+		return words_counter
 
-	def get_top_ten(self):
-		word_list = self.collect_word_data()	
-		# returns tuple, number of unique words, top ten words
-		return (collections.Counter(word_list)).most_common(10)
+	def get_top_ten(self, words_counter):	
+		# returns top 10 most common words
+		return words_counter.most_common(10)
 
 	# loads words to be ignored from file
 	def get_ignore_list(self):
 		mcw_list = []
 		with open(os.getcwd() + '/ignore_list.txt', "r") as mcwords:
 			for line in mcwords.readlines():
-				mcw_list.append(line.strip())
+				if line.strip() not in mcw_list:
+					mcw_list.append(line.strip())
 
 		return mcw_list
 
-	def plot_results(self, r_username):
-		words = [word[0] for word in self.top_ten]
-		times_used = [word[1] for word in self.top_ten]
+	def plot_results(self, r_username, top_ten):
+		words = [word[0] for word in top_ten]
+		times_used = [word[1] for word in top_ten]
 
 		y_axis = np.arange(10) + 0.5
 		bar_height = 0.7
@@ -110,7 +126,7 @@ class TenWordsBot():
 				                color='g',
 				                yerr=0)
 
-		x_max = max(times_used) + 10
+		x_max = max(times_used) + 0.1*max(times_used)
 		plt.xlim([0, x_max])
 		#labeling the graph
 		plt.xlabel('Usage Count')
@@ -126,10 +142,10 @@ class TenWordsBot():
 
 		return output_graph
 
-	def label_graph(self, rects, max):
+	def label_graph(self, rects, x_max):
 		for rect in rects:
 			width = rect.get_width()
-			xloc = width + .05*max
+			xloc = width + float(.05*x_max)
 			yloc = rect.get_y() + rect.get_height()/2.0
 			clr = 'white'
 			align = 'right'
@@ -150,10 +166,8 @@ class TenWordsBot():
 		# close it
 		plt.close()
 
-		print("... Done")
-
 	def upload_to_imgur(self, file_path, username):
-		with open(os.getcwd() + '/tenwords_bot_confix.txt', 'r') as id_and_secret:
+		with open(os.getcwd() + '/tenwords_bot_config.txt', 'r') as id_and_secret:
 			client_id, client_secret = ((id_and_secret.readlines())[0]).split(',')
 
 			CLIENT_ID = client_id
@@ -167,10 +181,10 @@ class TenWordsBot():
 
 			return uploaded_image.link
 
-	# edit this function
-	def reply_results(self, comment):
-		comment.reply("Out of " + str(self.unique_word_count) + " words used, here are your top ten:\n" + self.img_link)
+	def reply_results(self, comment, img_link, word_count):
+		comment.reply("Out of " + str(word_count) + " words used, here are your top ten:\n" + img_link)
 
+	# checks to see if string is a word to count
 	def filter_word(self, word):
 		if word in self.ignore:
 			return None
@@ -183,13 +197,15 @@ class TenWordsBot():
 
 	def already_replied(self, comment):
 		for cmnt in comment.replies:
+			# checks if comment is deleted before checking if it has name
 			if cmnt.author:
 				if cmnt.author.name == 'tenwords_bot':
 					return True
+			else:
+				return True
 
 		return False
 
 if __name__ == '__main__':
-	bot = TenWordsBot('2a93dr') # your thread id goes here
+	bot = TenWordsBot('2a8yyo') # your thread id goes here
 	bot.moniter_thread()
-
