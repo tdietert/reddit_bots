@@ -56,12 +56,9 @@ class TenWordsBot():
 
 	def get_commenters(self, submission):
 		comment_list = self.submission.comments #This will get the root level comments only
+		redditor_list = [x.author for x in comment_list]
+		return (comment_list, redditor_list)
 		
-		redditor_list = []
-		for x in comment_list:
-			redditor_list.append(x.author)
-		#redditor_list = list(reduce(lambda y, x: y +[x.author] if x.author else y, comment_list, []))
-		return (root_comment_list, redditor_list)
 
 	def get_user_comments(self, redditor):
 		user_comments = redditor.get_comments(limit=None)
