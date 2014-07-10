@@ -26,33 +26,35 @@ class TenWordsBot():
 			submission = self.r.get_submission(submission_id=self.current_thread_id)
 			submission.replace_more_comments(limit=None, threshold=0)
 			for comment, redditor in zip(*self.get_commenters(submission)):
-				if redditor.name not in self.responded_to and redditor != None:
-					if not self.already_replied(comment):
-						if comment.body[:15] == 'get_top_ten(me)'.lower(): #capitalization doesn't matter	
-
-							# collects word data and finds top ten
-							usr_comments = self.get_user_comments(redditor)
-							word_data = self.collect_word_data(usr_comments)
-							top_ten_words = self.get_top_ten(word_data)
-							unique_word_count = self.count_unique_words(usr_comments)
-
-							# graphs the data and saves it locally
-							output_graph = self.plot_results(redditor.name, top_ten_words)
-							save_dir = os.getcwd() + '/tenwords_bot_output/'
-							file_name = redditor.name + '.png'
-							self.save_locally(output_graph, save_dir, file_name)
-
-							# uploads to imgur and retrieves the image link
-							file_path = save_dir + redditor.name + '.png'
-							img_link = self.upload_to_imgur(file_path, redditor.name)
-
-							# replies to current comment
-							self.reply_results(comment, img_link, unique_word_count)
-							self.responded_to.add(redditor.name)
-							print 'successfully responded to ' + redditor.name + '...\n'
-
-							time.sleep(15)
-			time.sleep(60)
+				# must check if redditor is None before checking "redditor.name" or else error is thrown
+				if redditor != None:
+					if redditor.name not in self.responded_to:
+						if not self.already_replied(comment):
+							if comment.body[:15] == 'get_top_ten(me)'.lower(): #capitalization doesn't matter	
+	
+								# collects word data and finds top ten
+								usr_comments = self.get_user_comments(redditor)
+								word_data = self.collect_word_data(usr_comments)
+								top_ten_words = self.get_top_ten(word_data)
+								unique_word_count = self.count_unique_words(usr_comments)
+	
+								# graphs the data and saves it locally
+								output_graph = self.plot_results(redditor.name, top_ten_words)
+								save_dir = os.getcwd() + '/tenwords_bot_output/'
+								file_name = redditor.name + '.png'
+								self.save_locally(output_graph, save_dir, file_name)
+	
+								# uploads to imgur and retrieves the image link
+								file_path = save_dir + redditor.name + '.png'
+								img_link = self.upload_to_imgur(file_path, redditor.name)
+	
+								# replies to current comment
+								self.reply_results(comment, img_link, unique_word_count)
+								self.responded_to.add(redditor.name)
+								print 'successfully responded to ' + redditor.name + '...\n'
+	
+								time.sleep(15)
+				time.sleep(60)
 
 	def get_commenters(self, submission):
 		comment_list = self.submission.comments #This will get the root level comments only
