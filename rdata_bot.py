@@ -15,7 +15,7 @@ class rdata_bot():
   
 	def __init__(self, subreddits, words):
 		self.r = praw.Reddit('this is /u/swingtheory\'s data gatherer!')
-		self.r.login("tenwords_bot", 'ilikepotatoesjug')
+		self.r.login("username", 'password')
 		self.subreddit_names = subreddits
 		self.subreddit_list = [self.r.get_subreddit(x) for x in subreddits]
 		self.key_words = words
